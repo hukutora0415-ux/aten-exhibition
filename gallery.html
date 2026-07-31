@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ONLINE GALLERY ｜ あ。展</title>
+<meta name="description" content="来場者が投稿した「あ。」の体験が展示作品として並ぶ、生きた展示室。" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body class="crt-flicker">
+
+<div class="wrap">
+  <header class="site-header">
+    <a class="site-title" href="index.html">
+      あ。展
+      <small>日常的絶望屋敷</small>
+    </a>
+    <nav class="site-nav">
+      <a href="index.html">投稿する</a>
+      <a href="gallery.html" class="active">ONLINE GALLERY</a>
+    </nav>
+  </header>
+
+  <section class="hero fade-in" style="padding-top: var(--space-5); padding-bottom: var(--space-3);">
+    <div class="kicker">ONLINE GALLERY</div>
+    <h1 style="font-size: clamp(1.5rem, 4vw, 2.2rem);">オンライン展示室</h1>
+    <p class="lead">投稿されるたびに、展示は増え続ける。</p>
+  </section>
+
+  <!-- 人気ランキング -->
+  <section class="fade-in" id="ranking-section" style="margin-bottom: var(--space-5);">
+    <h2 style="font-family: var(--font-mono); font-size: .75rem; letter-spacing:.2em; color: var(--text-dim);">
+      人気展示ランキング TOP10
+    </h2>
+    <ol class="ranking-list" id="ranking-list">
+      <li class="empty-state" style="grid-column: 1 / -1;">読み込み中…</li>
+    </ol>
+  </section>
+
+  <div class="gallery-toolbar">
+    <div class="sort-tabs" id="sort-tabs">
+      <button data-sort="new" class="active">新着順</button>
+      <button data-sort="popular">人気順</button>
+      <button data-sort="category">カテゴリー順</button>
+    </div>
+    <select class="category-filter" id="category-filter">
+      <option value="">すべてのカテゴリー</option>
+    </select>
+  </div>
+
+  <div class="exhibit-grid" id="exhibit-grid">
+    <div class="empty-state" style="grid-column: 1 / -1;">展示を読み込んでいます…</div>
+  </div>
+
+  <footer class="site-footer">
+    「日常的絶望屋敷 ー あ。展 ー」 ｜ この展示室はあなたの投稿で育っていく
+  </footer>
+</div>
+
+<script type="module" src="gallery.js"></script>
+</body>
+</html>

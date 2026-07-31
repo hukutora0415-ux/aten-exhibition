@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>あ。展 ｜ 日常的絶望屋敷</title>
+<meta name="description" content="展示は、来場者によって完成する。あなたが体験した「あ。」を投稿してください。" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body class="crt-flicker">
+
+<div class="wrap">
+  <header class="site-header">
+    <a class="site-title" href="index.html">
+      あ。展
+      <small>日常的絶望屋敷</small>
+    </a>
+    <nav class="site-nav">
+      <a href="index.html" class="active">投稿する</a>
+      <a href="gallery.html">ONLINE GALLERY</a>
+    </nav>
+  </header>
+
+  <section class="hero fade-in">
+    <div class="kicker">EXHIBITION IS COMPLETED BY VISITORS</div>
+    <h1>展示は、<br />来場者によって完成する。</h1>
+    <p class="lead">
+      あなたが日常で見つけた、小さな「あ。」の瞬間を教えてください。
+      投稿はAIによって一篇の展示作品として生まれ変わり、
+      オンライン展示室へ永続的に加わります。
+    </p>
+  </section>
+
+  <section class="submit-panel fade-in" id="submit-panel">
+    <label for="text-input">YOUR "あ。" ── 体験を書いてください</label>
+    <textarea id="text-input" maxlength="200"
+      placeholder="例：レポートを書き終えた瞬間に消えた"></textarea>
+    <div class="examples">
+      <span>・財布が無かった</span>
+      <span>・終電を逃した</span>
+      <span>・提出期限が昨日だった</span>
+    </div>
+    <button class="btn btn-primary" id="submit-btn">この「あ。」を展示する</button>
+    <div class="form-status" id="form-status"></div>
+  </section>
+
+  <div id="result-slot"></div>
+
+  <footer class="site-footer">
+    「日常的絶望屋敷 ー あ。展 ー」 ｜ 投稿された体験は展示物として公開されます
+  </footer>
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>管理画面 ｜ あ。展</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="wrap">
+  <header class="site-header">
+    <a class="site-title" href="admin.html">
+      あ。展
+      <small>ADMIN CONSOLE</small>
+    </a>
+    <nav class="site-nav">
+      <a href="gallery.html">展示室を見る ↗</a>
+      <a href="#" id="logout-link">ログアウト</a>
+    </nav>
+  </header>
+
+  <section style="margin-top: var(--space-4);">
+    <h2 style="font-family: var(--font-mono); font-size:.75rem; letter-spacing:.15em; color: var(--text-dim); margin-bottom: var(--space-2);">
+      DASHBOARD
+    </h2>
+    <div class="dashboard-stats" id="dashboard-stats">
+      <div class="stat-cell"><div class="label">総展示数</div><div class="value">–</div></div>
+      <div class="stat-cell"><div class="label">今日の投稿数</div><div class="value">–</div></div>
+      <div class="stat-cell"><div class="label">今日の共感数</div><div class="value">–</div></div>
+      <div class="stat-cell"><div class="label">通報件数</div><div class="value">–</div></div>
+    </div>
+
+    <div style="margin-bottom: var(--space-4);">
+      <h3 style="font-family: var(--font-mono); font-size:.7rem; letter-spacing:.15em; color: var(--text-dim); margin-bottom: var(--space-2);">
+        人気展示 TOP5
+      </h3>
+      <ol class="ranking-list" id="top5-list"></ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="admin-tabs">
+      <button data-tab="exhibits" class="active">展示一覧</button>
+      <button data-tab="reports">通報一覧</button>
+    </div>
+
+    <div id="tab-exhibits">
+      <div class="admin-header" style="margin-bottom: var(--space-3);">
+        <input type="text" class="search-box" id="admin-search" placeholder="タイトル・本文・展示番号で検索" />
+        <div class="sort-tabs" id="admin-sort">
+          <button data-sort="new" class="active">新着順</button>
+          <button data-sort="popular">人気順</button>
+        </div>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>番号</th>
+              <th>タイトル / 本文</th>
+              <th>カテゴリー</th>
+              <th>投稿日時</th>
+              <th>あ。</th>
+              <th>状態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="admin-tbody">
+            <tr><td colspan="7">読み込み中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-reports" style="display:none;">
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>展示</th>
+              <th>理由</th>
+              <th>通報日時</th>
+              <th>展示の状態</th>
+            </tr>
+          </thead>
+          <tbody id="reports-tbody">
+            <tr><td colspan="4">読み込み中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">ADMIN CONSOLE ｜ あ。展</footer>
+</div>
+
+<script type="module" src="admin.js"></script>
+</body>
+</html>
