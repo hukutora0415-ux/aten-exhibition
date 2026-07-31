@@ -20,14 +20,14 @@
 
 export const CONFIG = {
   // ── Supabase ──────────────────────────────────────────────
-  SUPABASE: {
-    // 例: https://hdlcwanhbgaqpiacsuiw.supabase.co/rest/v1/
-    URL: "YOUR_SUPABASE_URL",
-    // anon / public key（RLS前提。service_role キーは絶対に使わない）
-    ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkbGN3YW5oYmdhcXBpYWNzdWl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MDM0MDYsImV4cCI6MjEwMTA3OTQwNn0.lKgOYlLLZZ2P8wVtL7mhyoc4JgqLzGdot8tqajaRtKo,
-    TABLE: "exhibits",
-    REPORTS_TABLE: "reports",
-  },
+ SUPABASE: {
+  // 例: "https://hdlcwanhbgaqpiacsuiw.supabase.co"
+  URL: "https://hdlcwanhbgaqpiacsuiw.supabase.co",
+  // anon / public key
+  ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ...(続きの文字列全部)",
+  TABLE: "exhibits",
+  REPORTS_TABLE: "reports",
+},
 
   // ── AI展示生成 ────────────────────────────────────────────
   AI: {
