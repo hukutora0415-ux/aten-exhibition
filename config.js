@@ -24,7 +24,7 @@ export const CONFIG = {
   // 例: "https://hdlcwanhbgaqpiacsuiw.supabase.co"
   URL: "https://hdlcwanhbgaqpiacsuiw.supabase.co",
   // anon / public key
-  ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ...(続きの文字列全部)",
+  ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkbGN3YW5oYmdhcXBpYWNzdWl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MDM0MDYsImV4cCI6MjEwMTA3OTQwNn0.lKgOYlLLZZ2P8wVtL7mhyoc4JgqLzGdot8tqajaRtKo",
   TABLE: "exhibits",
   REPORTS_TABLE: "reports",
 },
