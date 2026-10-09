@@ -84,3 +84,127 @@ function renderQuestion() {
     <div class="quiz-options">
       ${options
         .map(
+          (opt, i) =>
+            `<button class="quiz-option" data-index="${i}">${escapeHtml(opt.text)}</button>`
+        )
+        .join("")}
+    </div>
+  `;
+
+  panel.querySelectorAll(".quiz-option").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const i = parseInt(btn.dataset.index, 10);
+      handleAnswer(options[i]);
+    });
+  });
+}
+
+function stageLabel() {
+  if (state.stage === "A") return "傾向チェック";
+  if (state.stage === "B") return `${TYPE_LABELS[state.confirmedType]}・深掘り`;
+  if (state.stage === "C") return "最終チェック";
+  return "";
+}
+
+function getCurrentQuestion() {
+  if (state.stage === "A") return STAGE_A[state.indexInStage];
+  if (state.stage === "B") return STAGE_B[state.confirmedType][state.indexInStage];
+  if (state.stage === "C") return STAGE_C[state.indexInStage];
+  return { question: "", options: [] };
+}
+
+/* ------------------------------------------------------------------
+ * 回答処理
+ * ------------------------------------------------------------------ */
+function handleAnswer(option) {
+  state.totalScore += option.score;
+  state.answeredCount += 1;
+
+  if (state.stage === "A") {
+    state.typeScores[option.type] += 2; // Stage Aのみタイプ加点(+2固定)
+    state.indexInStage += 1;
+    if (state.indexInStage >= STAGE_A.length) {
+      state.confirmedType = determineType();
+      state.stage = "B";
+      state.indexInStage = 0;
+    }
+  } else if (state.stage === "B") {
+    state.indexInStage += 1;
+    if (state.indexInStage >= 3) {
+      state.stage = "C";
+      state.indexInStage = 0;
+    }
+  } else if (state.stage === "C") {
+    state.indexInStage += 1;
+    if (state.indexInStage >= STAGE_C.length) {
+      renderResult();
+      return;
+    }
+  }
+
+  renderQuestion();
+}
+
+function determineType() {
+  let best = null;
+  let bestScore = -1;
+  for (const [type, score] of Object.entries(state.typeScores)) {
+    if (score > bestScore) {
+      bestScore = score;
+      best = type;
+    }
+  }
+  return best;
+}
+
+/* ------------------------------------------------------------------
+ * 結果画面
+ * ------------------------------------------------------------------ */
+function renderResult() {
+  const normalized = Math.round(
+    ((state.totalScore - SCORE_MIN) / (SCORE_MAX - SCORE_MIN)) * 100
+  );
+  const clamped = Math.max(0, Math.min(100, normalized));
+  const levelIndex = LEVELS.findIndex((l) => clamped <= l.max);
+  const level = LEVELS[Math.max(0, levelIndex)];
+  const typeId = state.confirmedType;
+  const typeLabel = TYPE_LABELS[typeId];
+  const comment = RESULT_COMMENTS[typeId][Math.max(0, levelIndex)];
+
+  // 展示ページ（index.html）に引き継ぐための結果データ
+  const result = { typeId, typeLabel, score: clamped, levelLabel: level.label };
+  sessionStorage.setItem("aten_diagnosis_result", JSON.stringify(result));
+
+  panel.innerHTML = `
+    <div class="result-screen fade-in">
+      <div class="type-label">YOUR TYPE</div>
+      <h2>${escapeHtml(typeLabel)}</h2>
+      <div class="level-tag">${escapeHtml(level.label)}</div>
+      <div class="score-meter"><div class="fill" style="width:${clamped}%;"></div></div>
+      <div class="score-number">${clamped}<span> / 100</span></div>
+      <p class="result-comment">${escapeHtml(comment)}</p>
+      <a href="index.html" class="btn btn-primary" style="display:block;">
+        あなたの「あ。」を展示する →
+      </a>
+      <p style="margin-top: var(--space-2);">
+        <button class="report-link" id="retry-btn">もう一度診断する</button>
+      </p>
+    </div>
+  `;
+
+  document.getElementById("retry-btn").addEventListener("click", () => {
+    state.stage = "intro";
+    state.indexInStage = 0;
+    state.answeredCount = 0;
+    state.totalScore = 0;
+    state.confirmedType = null;
+    state.typeScores = { forget: 0, ruminate: 0, dull: 0, sensitive: 0, accumulate: 0, detached: 0 };
+    renderIntro();
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
