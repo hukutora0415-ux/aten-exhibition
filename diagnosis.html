@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>あ。度診断 ｜ あ。展</title>
+<meta name="description" content="全9問であなたの「あ。度」とタイプを診断。結果はそのまま展示投稿につながります。" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body class="crt-flicker">
+
+<div class="wrap">
+  <header class="site-header">
+    <a class="site-title" href="index.html">
+      あ。展
+      <small>日常的絶望屋敷</small>
+    </a>
+    <nav class="site-nav">
+      <a href="diagnosis.html" class="active">あ。度診断</a>
+      <a href="index.html">投稿する</a>
+      <a href="gallery.html">ONLINE GALLERY</a>
+    </nav>
+  </header>
+
+  <section class="hero fade-in" style="padding-top: var(--space-5); padding-bottom: var(--space-2);">
+    <div class="kicker">HOW MUCH "あ。" ARE YOU?</div>
+    <h1 style="font-size: clamp(1.6rem, 4vw, 2.4rem);">あ。度診断</h1>
+  </section>
+
+  <div class="quiz-panel fade-in" id="quiz-panel">
+    <!-- diagnosis.js がここに質問・結果を描画 -->
+  </div>
+
+  <footer class="site-footer">
+    「日常的絶望屋敷 ー あ。展 ー」 ｜ 診断結果は保存されません(このブラウザ内のみ)
+  </footer>
+</div>
+
+<script type="module" src="diagnosis.js"></script>
+</body>
+</html>
