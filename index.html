@@ -26,9 +26,9 @@
     <div class="kicker">EXHIBITION IS COMPLETED BY VISITORS</div>
     <h1>展示は、<br />来場者によって完成する。</h1>
     <p class="lead">
-      あなたが日常で見つけた、小さな「あ。」の瞬間を教えてください。
-      投稿はAIによって一篇の展示作品として生まれ変わり、
-      オンライン展示室へ永続的に加わります。
+      あなたが日常で見つけた、小さな「あ。」の瞬間を、
+      タイトルと説明文にして投稿してください。
+      そのまま一篇の展示作品として、オンライン展示室へ永続的に加わります。
     </p>
   </section>
 
@@ -36,14 +36,35 @@
   <div id="diagnosis-banner-slot"></div>
 
   <section class="submit-panel fade-in" id="submit-panel">
-    <label for="text-input">YOUR "あ。" ── 体験を書いてください</label>
-    <textarea id="text-input" maxlength="200"
-      placeholder="例：レポートを書き終えた瞬間に消えた"></textarea>
-    <div class="examples">
+    <label for="title-input">展示タイトル</label>
+    <input type="text" id="title-input" maxlength="40" placeholder="例：保存したつもり。" />
+
+    <label for="desc-input" style="margin-top: var(--space-3);">説明文</label>
+    <textarea id="desc-input" maxlength="200"
+      placeholder="例：完成という安心感ほど、人を油断させるものはない。"></textarea>
+
+    <label for="category-select" style="margin-top: var(--space-3);">カテゴリー</label>
+    <select id="category-select">
+      <option value="大学生活">大学生活</option>
+      <option value="仕事">仕事</option>
+      <option value="交通">交通</option>
+      <option value="お金">お金</option>
+      <option value="人間関係">人間関係</option>
+      <option value="デジタル">デジタル</option>
+      <option value="暮らし">暮らし</option>
+      <option value="日常">日常</option>
+      <option value="その他">その他</option>
+    </select>
+
+    <label for="tags-input" style="margin-top: var(--space-3);">タグ(カンマ区切り・任意)</label>
+    <input type="text" id="tags-input" placeholder="例：レポート, 締切, 保存忘れ" />
+
+    <div class="examples" style="margin-top: var(--space-2);">
       <span>・財布が無かった</span>
       <span>・終電を逃した</span>
       <span>・提出期限が昨日だった</span>
     </div>
+
     <button class="btn btn-primary" id="submit-btn">この「あ。」を展示する</button>
     <div class="form-status" id="form-status"></div>
   </section>
