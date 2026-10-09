@@ -239,6 +239,29 @@ body::after {
 }
 .submit-panel textarea:focus { border-color: var(--ink); }
 
+.submit-panel input[type="text"],
+.submit-panel select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.8rem var(--space-3);
+  outline: none;
+  transition: border-color 0.25s ease;
+}
+.submit-panel input[type="text"]:focus,
+.submit-panel select:focus { border-color: var(--ink); }
+.submit-panel select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(1.1em), calc(100% - 13px) calc(1.1em);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
 .examples {
   margin-top: var(--space-2);
   font-size: 0.78rem;
