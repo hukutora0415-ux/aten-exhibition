@@ -2,52 +2,106 @@
  * script.js
  * ------------------------------------------------------------------
  * index.html（投稿ページ）のロジック。
- * 1. ユーザーが体験を入力
- * 2. ai-generator.js で展示データ（タイトル/説明/カテゴリ/タグ）を生成
- * 3. supabase.js 経由で保存
- * 4. 生成結果をその場でカード表示（"生きた展示会"の実感を演出）
+ *
+ * 【変更】AI生成(ai-generator.js)は使わない。ユーザーが直接
+ * タイトル・説明文・カテゴリー・タグを入力し、そのまま展示として
+ * 保存する。
  * ------------------------------------------------------------------
  */
 
-import { generateExhibit } from "./ai-generator.js";
 import { insertExhibit, getNextDisplayNumber, isConfigured } from "./supabase.js";
 
-const textInput = document.getElementById("text-input");
+const DIAGNOSIS_KEY = "aten_diagnosis_result";
+
+const titleInput = document.getElementById("title-input");
+const descInput = document.getElementById("desc-input");
+const categorySelect = document.getElementById("category-select");
+const tagsInput = document.getElementById("tags-input");
 const submitBtn = document.getElementById("submit-btn");
 const statusEl = document.getElementById("form-status");
 const resultSlot = document.getElementById("result-slot");
+const bannerSlot = document.getElementById("diagnosis-banner-slot");
 
 submitBtn.addEventListener("click", handleSubmit);
-textInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
-});
+
+renderDiagnosisBanner();
+
+function renderDiagnosisBanner() {
+  const result = getDiagnosisResult();
+  if (!result) return;
+
+  bannerSlot.innerHTML = `
+    <div class="diagnosis-banner fade-in">
+      <div class="info">
+        診断結果: <strong>${escapeHtml(result.typeLabel)}</strong>
+        ／ あ。度 ${result.score}(${escapeHtml(result.levelLabel)})
+        ── この結果は投稿時にタグとして付与されます
+      </div>
+      <button id="clear-diagnosis-btn">結果を使わない</button>
+    </div>
+  `;
+
+  document.getElementById("clear-diagnosis-btn").addEventListener("click", () => {
+    sessionStorage.removeItem(DIAGNOSIS_KEY);
+    bannerSlot.innerHTML = "";
+  });
+}
+
+function getDiagnosisResult() {
+  try {
+    const raw = sessionStorage.getItem(DIAGNOSIS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseTags(raw) {
+  if (!raw.trim()) return [];
+  return raw
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map((t) => (t.startsWith("#") ? t : `#${t}`));
+}
 
 async function handleSubmit() {
-  const text = textInput.value.trim();
+  const title = titleInput.value.trim();
+  const description = descInput.value.trim();
+  const category = categorySelect.value;
 
-  if (!text) {
-    setStatus("あなたの「あ。」を、一文でいいので書いてください。", true);
+  if (!title) {
+    setStatus("展示タイトルを書いてください。", true);
     return;
   }
-  if (text.length < 3) {
-    setStatus("もう少しだけ、詳しく書いてください。", true);
+  if (!description) {
+    setStatus("説明文を書いてください。", true);
     return;
   }
+
+  let tags = parseTags(tagsInput.value);
+
+  const diagnosis = getDiagnosisResult();
+  if (diagnosis) {
+    const typeTag = `#${diagnosis.typeLabel}`;
+    if (!tags.includes(typeTag)) tags = [...tags, typeTag];
+  }
+  tags = tags.slice(0, 6);
 
   toggleLoading(true);
-  setStatus("展示を生成しています…");
+  setStatus("展示室へ送信しています…");
 
   try {
-    const generated = await generateExhibit(text);
-
     if (!isConfigured()) {
-      // Supabase未設定時は保存せず、生成プレビューのみ表示する
       setStatus(
         "※ Supabase未接続のため、これはプレビューです。config.jsを設定すると展示室に永続保存されます。"
       );
       renderResult({
         display_number: "A-????",
-        ...generated,
+        title,
+        description,
+        category,
+        tags,
       });
       return;
     }
@@ -55,16 +109,18 @@ async function handleSubmit() {
     const display_number = await getNextDisplayNumber();
     const saved = await insertExhibit({
       display_number,
-      title: generated.title,
-      description: generated.description,
-      original_text: text,
-      category: generated.category,
-      tags: generated.tags,
+      title,
+      description,
+      original_text: description,
+      category,
+      tags,
     });
 
     setStatus("展示室に追加されました。");
     renderResult(saved);
-    textInput.value = "";
+    titleInput.value = "";
+    descInput.value = "";
+    tagsInput.value = "";
   } catch (err) {
     console.error(err);
     setStatus(`エラーが発生しました: ${err.message}`, true);
@@ -103,7 +159,7 @@ function setStatus(message, isError = false) {
 
 function toggleLoading(loading) {
   submitBtn.disabled = loading;
-  submitBtn.textContent = loading ? "生成中…" : "この「あ。」を展示する";
+  submitBtn.textContent = loading ? "送信中…" : "この「あ。」を展示する";
 }
 
 function escapeHtml(str) {
