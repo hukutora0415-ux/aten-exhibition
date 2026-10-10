@@ -2,23 +2,17 @@
  * supabase.js
  * ------------------------------------------------------------------
  * Supabase クライアントの初期化と、展示データ／通報データへの
- * アクセスをまとめたモジュール。他のスクリプトはこのモジュール
- * 経由でのみ Supabase を触る（直接 supabase-js を呼ばない）ことで、
- * 将来のスキーマ変更やバックエンド差し替えに強くする。
+ * アクセスをまとめたモジュール。
  * ------------------------------------------------------------------
  */
 
 import { CONFIG } from "./config.js";
 
-// Supabase JS SDK（CDN経由・ESM）
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 let client = null;
 let configured = false;
 
-/**
- * Supabaseクライアントを取得する。未設定の場合は null を返す。
- */
 export function getClient() {
   if (client) return client;
 
@@ -36,14 +30,10 @@ export function getClient() {
 }
 
 export function isConfigured() {
-  // getClient() を一度呼んでおくとフラグが確定する
   getClient();
   return configured;
 }
 
-/* ------------------------------------------------------------------
- * 展示番号の採番（A-0001 形式）
- * ------------------------------------------------------------------ */
 export async function getNextDisplayNumber() {
   const supabase = getClient();
   if (!supabase) return "A-0000";
@@ -60,9 +50,6 @@ export async function getNextDisplayNumber() {
   return `A-${String(next).padStart(4, "0")}`;
 }
 
-/* ------------------------------------------------------------------
- * 展示の新規作成
- * ------------------------------------------------------------------ */
 export async function insertExhibit({
   display_number,
   title,
@@ -92,7 +79,7 @@ export async function insertExhibit({
         report_count: 0,
         hidden: false,
         deleted: false,
-        status: "published", // published | under_review
+        status: "published",
       },
     ])
     .select()
@@ -102,14 +89,11 @@ export async function insertExhibit({
   return data;
 }
 
-/* ------------------------------------------------------------------
- * 展示一覧の取得（公開・非表示フィルタ対応）
- * ------------------------------------------------------------------ */
 export async function fetchExhibits({
-  sort = "new", // new | popular | category
+  sort = "new",
   category = null,
-  includeHidden = false, // 管理画面用
-  includeDeleted = false, // 管理画面用
+  includeHidden = false,
+  includeDeleted = false,
   limit = 200,
 } = {}) {
   const supabase = getClient();
@@ -141,29 +125,17 @@ export async function fetchExhibits({
   return data ?? [];
 }
 
-/* ------------------------------------------------------------------
- * 人気ランキング TOP N
- * ------------------------------------------------------------------ */
 export async function fetchRanking(limit = 10) {
   return fetchExhibits({ sort: "popular", limit });
 }
 
-/* ------------------------------------------------------------------
- * 共感（あ。）加算 — サーバー側でのアトミック加算を試み、
- * RPCが無い場合は read-modify-write にフォールバック
- * ------------------------------------------------------------------ */
 export async function incrementEmpathy(id) {
   const supabase = getClient();
   if (!supabase) throw new Error("Supabase未設定");
 
-  // 推奨: supabase-schema.sql 内の increment_empathy() RPC を使用
-  const { data, error } = await supabase.rpc("increment_empathy", {
-    row_id: id,
-  });
-
+  const { data, error } = await supabase.rpc("increment_empathy", { row_id: id });
   if (!error) return data;
 
-  // RPC未作成時のフォールバック（競合には弱いが動作はする）
   console.warn("[supabase] RPC未使用、フォールバックで加算します:", error.message);
   const { data: row, error: fetchErr } = await supabase
     .from(CONFIG.SUPABASE.TABLE)
@@ -183,9 +155,32 @@ export async function incrementEmpathy(id) {
   return updated;
 }
 
-/* ------------------------------------------------------------------
- * 通報の登録 ＋ しきい値チェックによる自動「審査中」化
- * ------------------------------------------------------------------ */
+export async function decrementEmpathy(id) {
+  const supabase = getClient();
+  if (!supabase) throw new Error("Supabase未設定");
+
+  const { data, error } = await supabase.rpc("decrement_empathy", { row_id: id });
+  if (!error) return data;
+
+  console.warn("[supabase] RPC未使用、フォールバックで減算します:", error.message);
+  const { data: row, error: fetchErr } = await supabase
+    .from(CONFIG.SUPABASE.TABLE)
+    .select("empathy_count")
+    .eq("id", id)
+    .single();
+  if (fetchErr) throw fetchErr;
+
+  const newCount = Math.max(0, (row?.empathy_count ?? 0) - 1);
+  const { data: updated, error: updateErr } = await supabase
+    .from(CONFIG.SUPABASE.TABLE)
+    .update({ empathy_count: newCount })
+    .eq("id", id)
+    .select()
+    .single();
+  if (updateErr) throw updateErr;
+  return updated;
+}
+
 export async function reportExhibit(exhibitId, reason) {
   const supabase = getClient();
   if (!supabase) throw new Error("Supabase未設定");
@@ -201,7 +196,7 @@ export async function reportExhibit(exhibitId, reason) {
     .eq("exhibit_id", exhibitId);
   if (countErr) throw countErr;
 
-  const threshold = 5; // config.js の REPORT.AUTO_REVIEW_THRESHOLD と同期
+  const threshold = 5;
   if ((count ?? 0) >= threshold) {
     await supabase
       .from(CONFIG.SUPABASE.TABLE)
@@ -226,9 +221,6 @@ export async function fetchReports() {
   return data ?? [];
 }
 
-/* ------------------------------------------------------------------
- * 管理操作: 公開 / 非表示 / 論理削除 / 復元
- * ------------------------------------------------------------------ */
 export async function setExhibitVisibility(id, hidden) {
   const supabase = getClient();
   if (!supabase) throw new Error("Supabase未設定");
@@ -255,19 +247,10 @@ export async function softDeleteExhibit(id, deleted = true) {
   return data;
 }
 
-/* ------------------------------------------------------------------
- * ダッシュボード統計
- * ------------------------------------------------------------------ */
 export async function fetchDashboardStats() {
   const supabase = getClient();
   if (!supabase) {
-    return {
-      total: 0,
-      todayCount: 0,
-      todayEmpathy: 0,
-      reportCount: 0,
-      top5: [],
-    };
+    return { total: 0, todayCount: 0, todayEmpathy: 0, reportCount: 0, top5: [] };
   }
 
   const todayStart = new Date();
@@ -290,8 +273,7 @@ export async function fetchDashboardStats() {
     ]);
 
   const todayCount = todayRows?.length ?? 0;
-  const todayEmpathy =
-    todayRows?.reduce((sum, r) => sum + (r.empathy_count ?? 0), 0) ?? 0;
+  const todayEmpathy = todayRows?.reduce((sum, r) => sum + (r.empathy_count ?? 0), 0) ?? 0;
 
   return {
     total: total ?? 0,
@@ -302,9 +284,6 @@ export async function fetchDashboardStats() {
   };
 }
 
-/* ------------------------------------------------------------------
- * リアルタイム購読（ギャラリー・ランキング自動更新用）
- * ------------------------------------------------------------------ */
 export function subscribeExhibits(onChange) {
   const supabase = getClient();
   if (!supabase) return () => {};
