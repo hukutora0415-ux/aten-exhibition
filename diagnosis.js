@@ -30,9 +30,8 @@ const SCORE_MAX = TOTAL_QUESTIONS * 3;
 
 const panel = document.getElementById("quiz-panel");
 
-// ── 進行状態 ──────────────────────────────────────────────
 const state = {
-  stage: "intro", // intro | A | B | C | result
+  stage: "intro",
   indexInStage: 0,
   typeScores: { forget: 0, ruminate: 0, dull: 0, sensitive: 0, accumulate: 0, detached: 0 },
   totalScore: 0,
@@ -42,9 +41,6 @@ const state = {
 
 renderIntro();
 
-/* ------------------------------------------------------------------
- * イントロ画面
- * ------------------------------------------------------------------ */
 function renderIntro() {
   panel.innerHTML = `
     <div class="quiz-intro fade-in">
@@ -66,9 +62,6 @@ function renderIntro() {
   });
 }
 
-/* ------------------------------------------------------------------
- * 質問画面の描画(共通)
- * ------------------------------------------------------------------ */
 function renderQuestion() {
   const { question, options } = getCurrentQuestion();
 
@@ -113,15 +106,12 @@ function getCurrentQuestion() {
   return { question: "", options: [] };
 }
 
-/* ------------------------------------------------------------------
- * 回答処理
- * ------------------------------------------------------------------ */
 function handleAnswer(option) {
   state.totalScore += option.score;
   state.answeredCount += 1;
 
   if (state.stage === "A") {
-    state.typeScores[option.type] += 2; // Stage Aのみタイプ加点(+2固定)
+    state.typeScores[option.type] += 2;
     state.indexInStage += 1;
     if (state.indexInStage >= STAGE_A.length) {
       state.confirmedType = determineType();
@@ -157,9 +147,6 @@ function determineType() {
   return best;
 }
 
-/* ------------------------------------------------------------------
- * 結果画面
- * ------------------------------------------------------------------ */
 function renderResult() {
   const normalized = Math.round(
     ((state.totalScore - SCORE_MIN) / (SCORE_MAX - SCORE_MIN)) * 100
@@ -171,7 +158,6 @@ function renderResult() {
   const typeLabel = TYPE_LABELS[typeId];
   const comment = RESULT_COMMENTS[typeId][Math.max(0, levelIndex)];
 
-  // 展示ページ（index.html）に引き継ぐための結果データ
   const result = { typeId, typeLabel, score: clamped, levelLabel: level.label };
   sessionStorage.setItem("aten_diagnosis_result", JSON.stringify(result));
 
@@ -189,6 +175,14 @@ function renderResult() {
       <p style="margin-top: var(--space-2);">
         <button class="report-link" id="retry-btn">もう一度診断する</button>
       </p>
+
+      <div class="koken-footer">
+        <p>「あ。展」は、立命館大学広告研究会がお送りしています。<br />ふだんの活動はこちら</p>
+        <a href="https://www.instagram.com/rits_koken" target="_blank" rel="noopener noreferrer" class="koken-link">
+          <img src="assets/koken-icon.jpg" alt="広告研究会ロゴ" class="koken-icon" />
+          <span>@rits_koken を見る →</span>
+        </a>
+      </div>
     </div>
   `;
 
