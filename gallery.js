@@ -3,8 +3,9 @@
  * ------------------------------------------------------------------
  * gallery.html（ONLINE GALLERY）のロジック。
  * - 展示一覧の取得・描画・並び替え・カテゴリー絞り込み
- * - 「あ。」共感ボタン（ローカルストレージで1人1回を制御）
+ * - 「あ。」共感ボタン（ローカルストレージで1人1回を制御・再タップで取り消し可能）
  * - 通報モーダル
+ * - マスターコードによるその場削除
  * - 人気ランキング TOP10（リアルタイム更新）
  * ------------------------------------------------------------------
  */
@@ -14,7 +15,9 @@ import {
   fetchExhibits,
   fetchRanking,
   incrementEmpathy,
+  decrementEmpathy,
   reportExhibit,
+  softDeleteExhibit,
   isConfigured,
   subscribeExhibits,
 } from "./supabase.js";
@@ -57,7 +60,6 @@ async function init() {
   await loadExhibits();
   await loadRanking();
 
-  // リアルタイム更新（新規投稿・共感数の変化を反映）
   subscribeExhibits(() => {
     loadExhibits();
     loadRanking();
@@ -100,12 +102,15 @@ function renderGrid(data) {
 
   grid.querySelectorAll("[data-empathy-id]").forEach((btn) => {
     const id = btn.dataset.empathyId;
-    if (hasEmpathized(id)) markEmpathized(btn);
     btn.addEventListener("click", () => handleEmpathy(id, btn));
   });
 
   grid.querySelectorAll("[data-report-id]").forEach((btn) => {
     btn.addEventListener("click", () => openReportPrompt(btn.dataset.reportId));
+  });
+
+  grid.querySelectorAll("[data-delete-id]").forEach((btn) => {
+    btn.addEventListener("click", () => openDeletePrompt(btn.dataset.deleteId));
   });
 }
 
@@ -126,10 +131,9 @@ function cardTemplate(ex) {
     <div class="card-footer">
       <span>${formatDate(ex.created_at)}</span>
       <div style="display:flex; align-items:center; gap:.8rem;">
+        <button class="delete-link" data-delete-id="${ex.id}">削除</button>
         <button class="report-link" data-report-id="${ex.id}">通報</button>
-        <button class="empathy-btn ${empathized ? "done" : ""}" data-empathy-id="${ex.id}" ${
-          empathized ? "disabled" : ""
-        }>
+        <button class="empathy-btn ${empathized ? "done" : ""}" data-empathy-id="${ex.id}">
           あ。 <span class="count">${ex.empathy_count ?? 0}</span>
         </button>
       </div>
@@ -138,36 +142,36 @@ function cardTemplate(ex) {
 }
 
 async function handleEmpathy(id, btn) {
-  if (hasEmpathized(id)) return;
   btn.disabled = true;
+  const countEl = btn.querySelector(".count");
+
   try {
-    const updated = await incrementEmpathy(id);
-    saveEmpathized(id);
-    markEmpathized(btn, updated?.empathy_count);
+    if (hasEmpathized(id)) {
+      const updated = await decrementEmpathy(id);
+      removeEmpathized(id);
+      btn.classList.remove("done");
+      if (updated) countEl.textContent = updated.empathy_count;
+      else countEl.textContent = Math.max(0, parseInt(countEl.textContent, 10) - 1);
+    } else {
+      const updated = await incrementEmpathy(id);
+      saveEmpathized(id);
+      btn.classList.add("done", "pulse");
+      if (updated) countEl.textContent = updated.empathy_count;
+      else countEl.textContent = parseInt(countEl.textContent, 10) + 1;
+      setTimeout(() => btn.classList.remove("pulse"), 500);
+    }
   } catch (err) {
     console.error(err);
+  } finally {
     btn.disabled = false;
   }
 }
 
-function markEmpathized(btn, count) {
-  btn.classList.add("done", "pulse");
-  btn.disabled = true;
-  if (count !== undefined) {
-    btn.querySelector(".count").textContent = count;
-  }
-  setTimeout(() => btn.classList.remove("pulse"), 500);
-}
-
-/* ── 通報 ─────────────────────────────────────────────── */
 const REPORT_REASONS = ["不適切", "誹謗中傷", "個人情報", "その他"];
 
 function openReportPrompt(id) {
   const reasonList = REPORT_REASONS.map((r, i) => `${i + 1}. ${r}`).join("\n");
-  const input = window.prompt(
-    `通報理由を番号で選択してください:\n${reasonList}`,
-    "1"
-  );
+  const input = window.prompt(`通報理由を番号で選択してください:\n${reasonList}`, "1");
   if (input === null) return;
   const idx = parseInt(input, 10) - 1;
   const reason = REPORT_REASONS[idx];
@@ -189,7 +193,31 @@ async function submitReport(id, reason) {
   }
 }
 
-/* ── ランキング描画 ───────────────────────────────────── */
+function openDeletePrompt(id) {
+  const code = window.prompt("削除するにはマスターコードを入力してください");
+  if (code === null) return;
+  if (code !== CONFIG.ADMIN.PASSWORD) {
+    window.alert("マスターコードが違います。");
+    return;
+  }
+  if (!window.confirm("この展示を削除します。よろしいですか？(管理画面から復元できます)")) {
+    return;
+  }
+  submitDelete(id);
+}
+
+async function submitDelete(id) {
+  try {
+    await softDeleteExhibit(id, true);
+    window.alert("削除しました。");
+    loadExhibits();
+    loadRanking();
+  } catch (err) {
+    console.error(err);
+    window.alert("削除に失敗しました: " + err.message);
+  }
+}
+
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 function renderRanking(data) {
@@ -210,7 +238,6 @@ function renderRanking(data) {
     .join("");
 }
 
-/* ── ローカルストレージによる1人1回制御 ─────────────────── */
 function getEmpathizedSet() {
   try {
     const raw = localStorage.getItem(CONFIG.EMPATHY.STORAGE_KEY);
@@ -227,8 +254,12 @@ function saveEmpathized(id) {
   set.add(String(id));
   localStorage.setItem(CONFIG.EMPATHY.STORAGE_KEY, JSON.stringify([...set]));
 }
+function removeEmpathized(id) {
+  const set = getEmpathizedSet();
+  set.delete(String(id));
+  localStorage.setItem(CONFIG.EMPATHY.STORAGE_KEY, JSON.stringify([...set]));
+}
 
-/* ── ユーティリティ ───────────────────────────────────── */
 function emptyState(msg) {
   return `<div class="empty-state" style="grid-column: 1 / -1;">${escapeHtml(msg)}</div>`;
 }
