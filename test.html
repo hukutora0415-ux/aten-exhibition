@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>接続テスト</title>
+<style>
+  body { background:#0a0a0a; color:#eeece4; font-family: sans-serif; padding: 24px; line-height: 1.8; }
+  h1 { font-size: 1.1rem; }
+  .row { border:1px solid #2a2924; padding: 12px 16px; margin: 12px 0; }
+  .ok { color:#7fb069; }
+  .ng { color:#e0705a; }
+  .wait { color:#b7893a; }
+  code { color:#8c897d; word-break: break-all; }
+</style>
+</head>
+<body>
+<h1>あ。展 接続テスト</h1>
+<p>この画面のスクリーンショットを送ってください。</p>
+<div id="out">テスト中…</div>
+
+<script type="module">
+import { CONFIG } from "./config.js";
+
+const out = document.getElementById("out");
+const url = CONFIG.SUPABASE.URL;
+const key = CONFIG.SUPABASE.ANON_KEY;
+
+function row(label, status, detail) {
+  const cls = status === "ok" ? "ok" : status === "ng" ? "ng" : "wait";
+  const mark = status === "ok" ? "✅" : status === "ng" ? "❌" : "…";
+  out.insertAdjacentHTML("beforeend",
+    `<div class="row"><b class="${cls}">${mark} ${label}</b><br><code>${detail}</code></div>`);
+}
+
+out.innerHTML = "";
+row("設定ファイルの読み込み", "ok", `URL: ${url}`);
+
+// テスト1: Supabaseのサーバーに届くか
+try {
+  const res = await fetch(`${url}/rest/v1/`, { headers: { apikey: key } });
+  row("① Supabaseサーバーへの通信", res.ok ? "ok" : "ng", `HTTP ${res.status}`);
+} catch (e) {
+  row("① Supabaseサーバーへの通信", "ng",
+    `${e}  → サーバーに届いていません。プロジェクトが一時停止中の可能性が高いです`);
+}
+
+// テスト2: exhibits テーブルを読めるか
+try {
+  const res = await fetch(`${url}/rest/v1/exhibits?select=id&limit=1`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  });
+  const body = await res.text();
+  row("② exhibitsテーブルの読み取り", res.ok ? "ok" : "ng", `HTTP ${res.status} ${body.slice(0, 200)}`);
+} catch (e) {
+  row("② exhibitsテーブルの読み取り", "ng", String(e));
+}
+
+// テスト3: reports テーブルを読めるか
+try {
+  const res = await fetch(`${url}/rest/v1/reports?select=id&limit=1`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  });
+  const body = await res.text();
+  row("③ reportsテーブルの読み取り", res.ok ? "ok" : "ng", `HTTP ${res.status} ${body.slice(0, 200)}`);
+} catch (e) {
+  row("③ reportsテーブルの読み取り", "ng", String(e));
+}
+</script>
+</body>
+</html>
