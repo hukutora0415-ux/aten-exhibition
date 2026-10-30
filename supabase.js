@@ -34,13 +34,18 @@ export function isConfigured() {
   return configured;
 }
 
+/* ------------------------------------------------------------------
+ * 展示番号の採番（A-0001 形式）
+ * 【変更】削除済みを含めずに数える（削除後の番号ズレを防ぐ）
+ * ------------------------------------------------------------------ */
 export async function getNextDisplayNumber() {
   const supabase = getClient();
   if (!supabase) return "A-0000";
 
   const { count, error } = await supabase
     .from(CONFIG.SUPABASE.TABLE)
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true })
+    .eq("deleted", false);
 
   if (error) {
     console.error("[supabase] 展示数の取得に失敗:", error);
@@ -234,16 +239,30 @@ export async function setExhibitVisibility(id, hidden) {
   return data;
 }
 
+/* ------------------------------------------------------------------
+ * 論理削除 / 復元
+ * 【変更】削除・復元のたびに、残っている展示の番号を
+ * 作成日時順の連番（A-0001, A-0002...）に自動で振り直す。
+ * ------------------------------------------------------------------ */
 export async function softDeleteExhibit(id, deleted = true) {
   const supabase = getClient();
   if (!supabase) throw new Error("Supabase未設定");
-  const { data, error } = await supabase
+
+  const { error } = await supabase
     .from(CONFIG.SUPABASE.TABLE)
     .update({ deleted })
-    .eq("id", id)
-    .select()
-    .single();
+    .eq("id", id);
   if (error) throw error;
+
+  const { error: rpcErr } = await supabase.rpc("renumber_exhibits");
+  if (rpcErr) console.error("[supabase] 展示番号の振り直しに失敗:", rpcErr);
+
+  const { data, error: fetchErr } = await supabase
+    .from(CONFIG.SUPABASE.TABLE)
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (fetchErr) throw fetchErr;
   return data;
 }
 
